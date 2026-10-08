@@ -1,0 +1,7 @@
+{
+  "name": "LacakPaket",
+  "description": "Aplikasi pelacak paket pengiriman multi-kurir logistik dengan notifikasi real-time dan riwayat status pengiriman.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
