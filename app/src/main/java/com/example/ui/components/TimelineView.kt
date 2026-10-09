@@ -1,7 +1,9 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -75,66 +77,71 @@ fun DeliveryProgressStepper(
             )
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Row 1: Circles & connecting lines centered perfectly
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 steps.forEachIndexed { index, (label, icon, color) ->
                     val stepNumber = index + 1
                     val isCompleted = stepNumber <= currentStep
-                    val isCurrent = stepNumber == currentStep
+                    val circleColor = if (isCompleted) color else Color(0xFFE2E8F0)
 
-                    val circleColor = when {
-                        isCompleted -> color
-                        else -> Color(0xFFE2E8F0)
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(circleColor),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(circleColor),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = label,
-                                tint = if (isCompleted) Color.White else Color(0xFF94A3B8),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (isCurrent) FontWeight.ExtraBold else FontWeight.Medium,
-                            color = if (isCurrent) color else if (isCompleted) Color(0xFF1E293B) else Color(0xFF94A3B8)
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = label,
+                            tint = if (isCompleted) Color.White else Color(0xFF94A3B8),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     if (index < steps.size - 1) {
-                        val lineColor = if (stepNumber < currentStep) {
-                            color
-                        } else {
-                            Color(0xFFE2E8F0)
-                        }
+                        val lineColor = if (stepNumber < currentStep) color else Color(0xFFE2E8F0)
                         Box(
                             modifier = Modifier
-                                .weight(0.5f)
+                                .weight(1f)
                                 .height(3.dp)
-                                .clip(RoundedCornerShape(2.dp))
                                 .background(lineColor)
                         )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row 2: Labels aligned under each step
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                steps.forEachIndexed { index, (label, _, color) ->
+                    val stepNumber = index + 1
+                    val isCompleted = stepNumber <= currentStep
+                    val isCurrent = stepNumber == currentStep
+
+                    Text(
+                        text = label,
+                        fontSize = 11.sp,
+                        fontWeight = if (isCurrent) FontWeight.ExtraBold else FontWeight.Medium,
+                        color = if (isCurrent) color else if (isCompleted) Color(0xFF1E293B) else Color(0xFF94A3B8),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
 }
+
 
 @Composable
 fun TimelineView(

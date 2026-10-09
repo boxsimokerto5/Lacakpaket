@@ -34,7 +34,9 @@ fun CourierBadge(
             color = Color.White,
             fontSize = 11.sp,
             fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.5.sp,
+            softWrap = false,
+            maxLines = 1
         )
     }
 }
@@ -52,7 +54,7 @@ fun StatusBadge(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
-            .padding(horizontal = 9.dp, vertical = 5.dp)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
             .testTag("status_badge_${if (isDelivered) "delivered" else "active"}")
     ) {
         Text(
@@ -60,7 +62,9 @@ fun StatusBadge(
             color = textColor,
             fontSize = 11.sp,
             fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.5.sp,
+            softWrap = false,
+            maxLines = 1
         )
     }
 }

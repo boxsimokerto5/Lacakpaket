@@ -58,7 +58,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
 import androidx.compose.ui.unit.sp
 import com.example.data.entity.TrackedPackageEntity
 import com.example.data.model.CourierList
@@ -225,19 +227,30 @@ fun PackageDetailScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        CourierBadge(courierCode = packageEntity.courierCode)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
+                            CourierBadge(courierCode = packageEntity.courierCode)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = courier.name,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = courier.name,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF0F172A)
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
+
                         StatusBadge(isDelivered = packageEntity.isDelivered)
                     }
+
 
                     Spacer(modifier = Modifier.height(14.dp))
 

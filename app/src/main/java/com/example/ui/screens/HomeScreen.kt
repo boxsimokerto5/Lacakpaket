@@ -4,14 +4,18 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,8 +27,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Inventory2
@@ -33,6 +37,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
+
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -128,20 +133,25 @@ fun HomeScreen(
                                 .clip(RoundedCornerShape(10.dp))
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = "LacakPaket",
-                                fontSize = 20.sp,
+                                fontSize = 19.sp,
                                 fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Lacak Seluruh Ekspedisi Indonesia",
                                 fontSize = 11.sp,
                                 color = Color(0xFFC2410C),
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+
                     }
                 },
 
@@ -233,10 +243,11 @@ fun HomeScreen(
                 )
             )
 
-            // Filter Chips with colorful highlights
+            // Filter Chips with horizontal scroll to prevent squishing
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -247,7 +258,7 @@ fun HomeScreen(
                 FilterChip(
                     selected = uiState.filterTab == "ALL",
                     onClick = { viewModel.setFilterTab("ALL") },
-                    label = { Text("Semua ($totalCount)", fontWeight = FontWeight.SemiBold) },
+                    label = { Text("Semua ($totalCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = Color.White,
@@ -258,7 +269,7 @@ fun HomeScreen(
                 FilterChip(
                     selected = uiState.filterTab == "ACTIVE",
                     onClick = { viewModel.setFilterTab("ACTIVE") },
-                    label = { Text("Dalam Perjalanan ($activeCount)", fontWeight = FontWeight.SemiBold) },
+                    label = { Text("Dalam Perjalanan ($activeCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFFF97316),
                         selectedLabelColor = Color.White,
@@ -269,7 +280,7 @@ fun HomeScreen(
                 FilterChip(
                     selected = uiState.filterTab == "DELIVERED",
                     onClick = { viewModel.setFilterTab("DELIVERED") },
-                    label = { Text("Terkirim ($deliveredCount)", fontWeight = FontWeight.SemiBold) },
+                    label = { Text("Terkirim ($deliveredCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF10B981),
                         selectedLabelColor = Color.White,
@@ -278,6 +289,7 @@ fun HomeScreen(
                     modifier = Modifier.testTag("filter_delivered")
                 )
             }
+
 
             // List of Packages
             if (uiState.filteredPackages.isEmpty()) {
@@ -430,15 +442,19 @@ fun BrightPackageCardItem(
             .clickable(onClick = onClick)
             .testTag("package_card_${pkg.waybill}"),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
             // Colorful left accent bar using courier brand color
             Box(
                 modifier = Modifier
                     .width(6.dp)
-                    .height(130.dp)
+                    .fillMaxHeight()
                     .background(courier.brandColor)
             )
 
@@ -447,22 +463,52 @@ fun BrightPackageCardItem(
                     .fillMaxWidth()
                     .padding(14.dp)
             ) {
-                // Header Row
+                // Row 1: Courier Badge + Courier Name on left, Status Badge on right
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        CourierBadge(courierCode = pkg.courierCode)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = courier.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    StatusBadge(isDelivered = pkg.isDelivered)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Row 2: Waybill with Copy Button (full line, never squished!)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CourierBadge(courierCode = pkg.courierCode)
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
                     Text(
                         text = pkg.waybill,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
                         color = Color(0xFF0F172A),
+                        letterSpacing = 0.5.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
+
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     IconButton(
                         onClick = onCopyWaybill,
@@ -475,19 +521,15 @@ fun BrightPackageCardItem(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    StatusBadge(isDelivered = pkg.isDelivered)
                 }
 
-                // Custom Package Title
+                // Custom Package Title if present
                 if (pkg.customTitle.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = pkg.customTitle,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -506,7 +548,7 @@ fun BrightPackageCardItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(12.dp)
@@ -521,7 +563,7 @@ fun BrightPackageCardItem(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Latest Checkpoint Banner
                 Surface(
@@ -535,7 +577,8 @@ fun BrightPackageCardItem(
                         color = if (pkg.isDelivered) Color(0xFF166534) else Color(0xFF1E40AF),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                     )
                 }
 
@@ -555,6 +598,7 @@ fun BrightPackageCardItem(
         }
     }
 }
+
 
 @Composable
 fun EmptyStateView(
