@@ -208,7 +208,9 @@ fun HomeScreen(
                 icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
                 text = { Text("Lacak Resi Baru", fontWeight = FontWeight.Bold, color = Color.White) },
                 containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("add_package_fab")
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+                    .testTag("add_package_fab")
             )
         }
     ) { innerPadding ->

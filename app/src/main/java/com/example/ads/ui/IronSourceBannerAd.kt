@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -82,13 +83,15 @@ fun IronSourceBannerAd(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(54.dp)
             .testTag("ironsource_banner_container"),
         color = Color(0xFFF8FAFC),
-        shadowElevation = 2.dp
+        shadowElevation = 3.dp
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .height(54.dp),
             contentAlignment = Alignment.Center
         ) {
             // Live Ad View container
