@@ -69,10 +69,10 @@ fun AddPackageDialog(
         if (waybill.length >= 3) CourierList.detectCourier(waybill) else null
     }
 
-    // skipPartiallyExpanded = false allows bottom sheet to open at half-screen
-    // and expand to 3/4 screen when swiped up, mimicking Google Maps
+    // skipPartiallyExpanded = true ensures the sheet opens directly to full natural height
+    // and does not awkwardly jump or stretch when keyboard appears
     val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+        skipPartiallyExpanded = true
     )
 
     ModalBottomSheet(
@@ -88,7 +88,6 @@ fun AddPackageDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.75f)
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 20.dp)
         ) {
@@ -126,7 +125,7 @@ fun AddPackageDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
             ) {
                 // Waybill field with Paste button

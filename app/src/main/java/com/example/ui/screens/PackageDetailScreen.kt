@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import com.example.ads.AdManager
 import com.example.ads.ui.IronSourceBannerAd
 import androidx.compose.foundation.background
@@ -74,6 +73,7 @@ import com.example.ui.components.CourierBadge
 import com.example.ui.components.DeliveryProgressStepper
 import com.example.ui.components.StatusBadge
 import com.example.ui.components.TimelineView
+import com.example.ui.theme.CoralOrangeGradient
 import com.example.ui.viewmodel.PackageViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -334,9 +334,8 @@ fun PackageDetailScreen(
                     }
 
                     Surface(
-                        color = Color.White,
+                        color = if (packageEntity.isDelivered) Color(0xFFDCFCE7) else Color(0xFFEFF6FF),
                         shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -354,7 +353,7 @@ fun PackageDetailScreen(
                                 text = enrichedLatestStatus,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E293B),
+                                color = if (packageEntity.isDelivered) Color(0xFF14532D) else Color(0xFF1E3A8A),
                                 lineHeight = 17.sp
                             )
                         }
@@ -415,20 +414,20 @@ fun PackageDetailScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            val cleanOrig = remember(packageEntity.origin) {
+                            val cleanOrigin = remember(packageEntity.origin) {
                                 com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(packageEntity.origin)
                             }
-                            val cleanDst = remember(packageEntity.destination) {
+                            val cleanDest = remember(packageEntity.destination) {
                                 com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(packageEntity.destination)
                             }
-                            val hasOrigin = cleanOrig.isNotBlank()
-                            val hasDest = cleanDst.isNotBlank()
+                            val hasOrigin = cleanOrigin.isNotBlank()
+                            val hasDest = cleanDest.isNotBlank()
                             val routeText = if (hasOrigin && hasDest) {
-                                "$cleanOrig → $cleanDst"
+                                "$cleanOrigin → $cleanDest"
                             } else if (hasOrigin) {
-                                "Asal: $cleanOrig"
+                                "Asal: $cleanOrigin"
                             } else if (hasDest) {
-                                "Tujuan: $cleanDst"
+                                "Tujuan: $cleanDest"
                             } else {
                                 "Jalur Resmi ${courier.name}"
                             }
