@@ -295,7 +295,6 @@ fun HomeScreen(
             if (uiState.filteredPackages.isEmpty()) {
                 EmptyStateView(
                     isSearch = uiState.searchQuery.isNotBlank(),
-                    onAddSample = { courier -> viewModel.addSamplePackage(courier) },
                     onOpenAddDialog = { showAddDialog = true }
                 )
             } else {
@@ -612,7 +611,6 @@ fun BrightPackageCardItem(
 @Composable
 fun EmptyStateView(
     isSearch: Boolean,
-    onAddSample: (String) -> Unit,
     onOpenAddDialog: () -> Unit
 ) {
     Box(
@@ -627,13 +625,12 @@ fun EmptyStateView(
         ) {
             Image(
                 painter = painterResource(id = com.example.R.drawable.app_logo),
-                contentDescription = "Logo LacakPaket",
+                contentDescription = "Logo Lacak Paket",
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(22.dp))
             )
-
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -648,9 +645,9 @@ fun EmptyStateView(
 
             Text(
                 text = if (isSearch) {
-                    "Coba periksa kembali ejaan nomor resi atau nama barang."
+                    "Coba periksa kembali ejaan nomor resi atau catatan paket Anda."
                 } else {
-                    "Pantau status paket dari JNE, J&T, SiCepat, AnterAja, dan kurir lainnya secara real-time dengan notifikasi otomatis."
+                    "Lacak status paket secara akurat dan real-time langsung dari server resmi ekspedisi kurir logistik."
                 },
                 fontSize = 13.sp,
                 color = Color(0xFF64748B),
@@ -659,52 +656,26 @@ fun EmptyStateView(
             )
 
             if (!isSearch) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Text(
-                    text = "🌟 COBA CONTOH RESI INSTAN:",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 1.sp
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Button(
+                    onClick = onOpenAddDialog,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.testTag("empty_add_package_button")
                 ) {
-                    Button(
-                        onClick = { onAddSample("jnt") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50012)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("sample_jnt_button")
-                    ) {
-                        Text("J&T", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                    Button(
-                        onClick = { onAddSample("sicepat") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD9222A)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("sample_sicepat_button")
-                    ) {
-                        Text("SiCepat", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                    Button(
-                        onClick = { onAddSample("jne") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00569B)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("sample_jne_button")
-                    ) {
-                        Text("JNE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Lacak Resi Baru",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }

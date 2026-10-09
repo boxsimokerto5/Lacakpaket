@@ -234,12 +234,12 @@ fun AddPackageDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Custom title / label
+                // Custom note / label
                 OutlinedTextField(
                     value = customTitle,
                     onValueChange = { customTitle = it },
-                    label = { Text("Nama Barang / Catatan (Opsional)") },
-                    placeholder = { Text("Misal: Sepatu, Kado, atau Buku") },
+                    label = { Text("Catatan Paket (Opsional)") },
+                    placeholder = { Text("Misal: Belanjaan Toko, Kado, dll.") },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()

@@ -375,7 +375,10 @@ fun PackageDetailScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -386,44 +389,82 @@ fun PackageDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Rute Perjalanan",
+                                    text = "Rute Ekspedisi",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A)
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
+                            val hasOrigin = packageEntity.origin.isNotBlank()
+                            val hasDest = packageEntity.destination.isNotBlank()
+                            val routeText = if (hasOrigin && hasDest) {
+                                "${packageEntity.origin} → ${packageEntity.destination}"
+                            } else if (hasOrigin) {
+                                "Asal: ${packageEntity.origin}"
+                            } else if (hasDest) {
+                                "Tujuan: ${packageEntity.destination}"
+                            } else {
+                                "Jalur Resmi ${courier.name}"
+                            }
                             Text(
-                                text = "${packageEntity.origin.ifBlank { "Jakarta" }} → ${packageEntity.destination.ifBlank { "Tujuan" }}",
+                                text = routeText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF475569)
                             )
                         }
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
+                        if (packageEntity.customTitle.isNotBlank()) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalShipping,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Catatan Paket",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Penerima",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
+                                    text = packageEntity.customTitle,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF475569)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = packageEntity.receiver.ifBlank { packageEntity.customTitle.ifBlank { "Penerima Paket" } },
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF475569)
-                            )
+                        } else {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalShipping,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Layanan Kurir",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = courier.name,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF475569)
+                                )
+                            }
                         }
                     }
                 }

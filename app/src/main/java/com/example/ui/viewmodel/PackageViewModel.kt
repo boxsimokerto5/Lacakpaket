@@ -137,6 +137,15 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
                 val courier = CourierList.findByCode(courierCode)
                 val result = repository.fetchTrackingInfo(waybill.trim(), courier.code, customTitle.trim())
 
+                if (!result.success) {
+                    val errMsg = result.message.ifBlank {
+                        "Nomor resi ${waybill.trim()} tidak ditemukan di sistem ${courier.name}. Pastikan nomor resi dan kurir yang dipilih sesuai data asli."
+                    }
+                    _extraState.update { it.copy(userMessage = errMsg) }
+                    onComplete(false, errMsg)
+                    return@launch
+                }
+
                 val entity = TrackedPackageEntity(
                     waybill = result.waybill,
                     courierCode = result.courierCode,
@@ -148,7 +157,7 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
                     origin = result.origin,
                     destination = result.destination,
                     shipper = result.shipper,
-                    receiver = result.receiver,
+                    receiver = "",
                     lastUpdated = System.currentTimeMillis(),
                     lastNotifiedCheckpoint = result.statusDescription,
                     checkpointsJson = TrackedPackageEntity.checkpointsToJson(result.checkpoints)
@@ -156,11 +165,12 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
 
                 repository.savePackage(entity)
 
-                _extraState.update { it.copy(userMessage = "Paket ${courier.name} ($waybill) berhasil ditambahkan") }
-                onComplete(true, "Berhasil melacak paket")
+                _extraState.update { it.copy(userMessage = "Resi ${result.waybill} (${courier.name}) berhasil dilacak") }
+                onComplete(true, "Berhasil melacak resi asli")
             } catch (e: Exception) {
-                _extraState.update { it.copy(userMessage = "Gagal melacak: ${e.message}") }
-                onComplete(false, e.localizedMessage ?: "Terjadi kesalahan")
+                val errMsg = "Gagal melacak: ${e.localizedMessage ?: "Terjadi kesalahan"}"
+                _extraState.update { it.copy(userMessage = errMsg) }
+                onComplete(false, errMsg)
             } finally {
                 _isLoading.value = false
             }
@@ -172,20 +182,24 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
             _isLoading.value = true
             try {
                 val result = repository.fetchTrackingInfo(pkg.waybill, pkg.courierCode, pkg.customTitle)
-                val updated = pkg.copy(
-                    status = result.status,
-                    statusDescription = result.statusDescription,
-                    isDelivered = result.isDelivered,
-                    origin = result.origin.ifBlank { pkg.origin },
-                    destination = result.destination.ifBlank { pkg.destination },
-                    shipper = result.shipper.ifBlank { pkg.shipper },
-                    receiver = result.receiver.ifBlank { pkg.receiver },
-                    lastUpdated = System.currentTimeMillis(),
-                    lastNotifiedCheckpoint = result.statusDescription,
-                    checkpointsJson = TrackedPackageEntity.checkpointsToJson(result.checkpoints)
-                )
-                repository.updatePackage(updated)
-                _extraState.update { it.copy(userMessage = "Status resi ${pkg.waybill} diperbarui") }
+                if (result.success) {
+                    val updated = pkg.copy(
+                        status = result.status,
+                        statusDescription = result.statusDescription,
+                        isDelivered = result.isDelivered,
+                        origin = result.origin.ifBlank { pkg.origin },
+                        destination = result.destination.ifBlank { pkg.destination },
+                        shipper = result.shipper.ifBlank { pkg.shipper },
+                        receiver = "",
+                        lastUpdated = System.currentTimeMillis(),
+                        lastNotifiedCheckpoint = result.statusDescription,
+                        checkpointsJson = TrackedPackageEntity.checkpointsToJson(result.checkpoints)
+                    )
+                    repository.updatePackage(updated)
+                    _extraState.update { it.copy(userMessage = "Status resi ${pkg.waybill} berhasil diperbarui") }
+                } else {
+                    _extraState.update { it.copy(userMessage = result.message.ifBlank { "Belum ada pembaruan untuk resi ${pkg.waybill}" }) }
+                }
             } catch (e: Exception) {
                 _extraState.update { it.copy(userMessage = "Gagal memperbarui: ${e.message}") }
             } finally {
@@ -213,51 +227,10 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun advanceSimulation(packageId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val success = repository.advancePackageSimulation(packageId)
-            _isLoading.value = false
-            if (success) {
-                _extraState.update { it.copy(userMessage = "Status berhasil dimajukan & notifikasi dikirim!") }
-            } else {
-                _extraState.update { it.copy(userMessage = "Paket sudah dalam status terkirim akhir.") }
-            }
-        }
-    }
-
     fun deletePackage(packageId: Long) {
         viewModelScope.launch {
             repository.deletePackage(packageId)
             _extraState.update { it.copy(userMessage = "Resi berhasil dihapus") }
-        }
-    }
-
-    fun addSamplePackage(courierCode: String) {
-        viewModelScope.launch {
-            val courier = CourierList.findByCode(courierCode)
-            val randomNum = (100000000..999999999).random()
-            val sampleWaybill = when (courierCode) {
-                "jnt" -> "JP$randomNum"
-                "sicepat" -> "00$randomNum"
-                "anteraja" -> "100$randomNum"
-                "spx" -> "SPXID$randomNum"
-                else -> "01$randomNum"
-            }
-
-            val sampleName = when (courierCode) {
-                "jnt" -> "Sneakers Casual Pria"
-                "sicepat" -> "Headphone Bluetooth"
-                "anteraja" -> "Buku Pemrograman Kotlin"
-                "spx" -> "Baju Kaos Distro"
-                else -> "Dokumen & Elektronik"
-            }
-
-            trackAndSavePackage(
-                waybill = sampleWaybill,
-                courierCode = courierCode,
-                customTitle = sampleName
-            ) { _, _ -> }
         }
     }
 

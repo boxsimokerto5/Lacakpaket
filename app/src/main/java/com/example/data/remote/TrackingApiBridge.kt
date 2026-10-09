@@ -13,11 +13,9 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 /**
- * TrackingApiBridge serves as a secure abstraction & proxy bridge
- * between the application and the Binderbyte courier logistics API.
- *
- * It prevents exposing raw secret keys in the UI, sanitizes requests,
- * masks sensitive credentials, and handles graceful fallbacks.
+ * TrackingApiBridge serves as a secure bridge to the live courier logistics API.
+ * It queries authentic data directly from official logistics servers and
+ * avoids any mock or dummy fallback generation.
  */
 object TrackingApiBridge {
     private const val BASE_URL = "https://api.binderbyte.com/v1"
@@ -28,8 +26,8 @@ object TrackingApiBridge {
 
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(12, TimeUnit.SECONDS)
-            .readTimeout(18, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
     }
@@ -63,14 +61,29 @@ object TrackingApiBridge {
     }
 
     /**
-     * Queries the live tracking API through the safe bridge.
+     * Queries the live tracking API directly for 100% authentic data.
+     * Returns a TrackingResult with success=true if valid, or success=false with real error message.
      */
     suspend fun queryWaybill(
         waybill: String,
-        courierCode: String
-    ): TrackingResult? = withContext(Dispatchers.IO) {
-        val apiKey = resolveSecureKey()
-        if (apiKey.isBlank()) return@withContext null
+        courierCode: String,
+        customApiKey: String = ""
+    ): TrackingResult = withContext(Dispatchers.IO) {
+        val courierObj = CourierList.findByCode(courierCode)
+        val apiKey = if (customApiKey.isNotBlank()) customApiKey else resolveSecureKey()
+
+        if (apiKey.isBlank()) {
+            return@withContext TrackingResult(
+                success = false,
+                message = "API Key belum terpasang. Silakan masukkan API Key di Pengaturan.",
+                courierCode = courierCode,
+                courierName = courierObj.name,
+                waybill = waybill,
+                status = "FAILED",
+                statusDescription = "Konfigurasi API Key dibutuhkan",
+                isDelivered = false
+            )
+        }
 
         val safeWaybill = waybill.trim().uppercase()
         val safeCourier = courierCode.trim().lowercase()
@@ -88,19 +101,56 @@ object TrackingApiBridge {
             val response = httpClient.newCall(request).execute()
             val bodyString = response.body?.string().orEmpty()
 
-            if (!response.isSuccessful || bodyString.isBlank()) {
-                return@withContext null
+            if (bodyString.isBlank()) {
+                return@withContext TrackingResult(
+                    success = false,
+                    message = "Server kurir tidak memberikan respon (HTTP ${response.code}). Silakan coba beberapa saat lagi.",
+                    courierCode = safeCourier,
+                    courierName = courierObj.name,
+                    waybill = safeWaybill,
+                    status = "FAILED",
+                    statusDescription = "Tidak ada respon dari server ekspedisi",
+                    isDelivered = false
+                )
             }
 
             val json = JSONObject(bodyString)
-            val status = json.optInt("status", 0)
+            val status = json.optInt("status", response.code)
+            val apiMessage = json.optString("message", "")
 
             if (status != 200) {
-                // If API returned not found or limit reached, return null to allow smart fallback
-                return@withContext null
+                val readableMessage = when {
+                    apiMessage.contains("not found", ignoreCase = true) || apiMessage.contains("tidak ditemukan", ignoreCase = true) ->
+                        "Nomor resi $safeWaybill tidak ditemukan di sistem ${courierObj.name}. Pastikan nomor resi dan kurir yang dipilih sudah benar."
+                    apiMessage.contains("limit", ignoreCase = true) || apiMessage.contains("kuota", ignoreCase = true) ->
+                        "Batas kuota pelacakan API sedang penuh. Coba kembali dalam beberapa saat."
+                    apiMessage.isNotBlank() -> apiMessage
+                    else -> "Gagal melacak resi (Status $status). Pastikan nomor resi valid."
+                }
+
+                return@withContext TrackingResult(
+                    success = false,
+                    message = readableMessage,
+                    courierCode = safeCourier,
+                    courierName = courierObj.name,
+                    waybill = safeWaybill,
+                    status = "NOT_FOUND",
+                    statusDescription = readableMessage,
+                    isDelivered = false
+                )
             }
 
-            val data = json.optJSONObject("data") ?: return@withContext null
+            val data = json.optJSONObject("data") ?: return@withContext TrackingResult(
+                success = false,
+                message = "Data pelacakan kosong dari sistem ${courierObj.name}",
+                courierCode = safeCourier,
+                courierName = courierObj.name,
+                waybill = safeWaybill,
+                status = "EMPTY",
+                statusDescription = "Data tidak ditemukan",
+                isDelivered = false
+            )
+
             val summary = data.optJSONObject("summary")
             val detail = data.optJSONObject("detail")
             val historyArray = data.optJSONArray("history")
@@ -142,12 +192,11 @@ object TrackingApiBridge {
                 }
             }
 
-            val courierObj = CourierList.findByCode(safeCourier)
             val courierName = summary?.optString("courier", courierObj.name) ?: courierObj.name
 
             TrackingResult(
                 success = true,
-                message = "Berhasil memuat data dari kurir logistik",
+                message = "Berhasil memuat data asli dari kurir logistik",
                 courierCode = safeCourier,
                 courierName = courierName,
                 waybill = summary?.optString("awb", safeWaybill) ?: safeWaybill,
@@ -158,17 +207,25 @@ object TrackingApiBridge {
                 origin = detail?.optString("origin", "") ?: "",
                 destination = detail?.optString("destination", "") ?: "",
                 shipper = detail?.optString("shipper", "") ?: "",
-                receiver = detail?.optString("receiver", "") ?: "",
+                receiver = "",
                 checkpoints = checkpoints
             )
-        } catch (_: Exception) {
-            // Safe swallow - do not leak API key or break execution
-            null
+        } catch (e: Exception) {
+            TrackingResult(
+                success = false,
+                message = "Gagal terhubung ke server kurir: ${e.localizedMessage ?: "Koneksi terputus"}. Periksa koneksi internet Anda.",
+                courierCode = safeCourier,
+                courierName = courierObj.name,
+                waybill = safeWaybill,
+                status = "NETWORK_ERROR",
+                statusDescription = "Gangguan koneksi jaringan",
+                isDelivered = false
+            )
         }
     }
 
     /**
-     * Enriches brief or empty courier checkpoint status notes into full, informative Indonesian sentences.
+     * Enriches brief or abbreviated courier checkpoint notes into full, informative Indonesian sentences.
      */
     fun enrichStatusDescription(
         rawNote: String,
@@ -180,7 +237,6 @@ object TrackingApiBridge {
         val trimmed = rawNote.trim()
         val loc = location.trim()
 
-        // If it's already a full sentence (more than 30 chars with multiple words), keep it
         if (trimmed.length > 30 && trimmed.contains(" ") && trimmed.split("\\s+".toRegex()).size >= 5) {
             return trimmed
         }
@@ -190,7 +246,7 @@ object TrackingApiBridge {
 
         return when {
             isFirst && (isDelivered || upper.contains("DELIVERED") || upper.contains("DITERIMA") || upper.contains("SELESAI") || upper.contains("POD")) -> {
-                "Paket telah berhasil diantar dan diterima oleh penerima di lokasi tujuan."
+                "Paket telah berhasil diantar dan diterima di lokasi tujuan."
             }
             upper.contains("OUT FOR DELIVERY") || upper.contains("DELIVERY") || upper.contains("ANTAR") || upper.contains("KURIR") || upper.contains("DIANTAR") -> {
                 "Paket sedang dibawa oleh kurir logistik dan dalam perjalanan diantar langsung ke alamat tujuan Anda."
