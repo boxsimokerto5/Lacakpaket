@@ -1,8 +1,11 @@
 package com.example.ui.screens
 
+import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import com.example.ads.AdManager
+import com.example.ads.ui.IronSourceBannerAd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -88,6 +91,7 @@ fun PackageDetailScreen(
     BackHandler { onBack() }
 
     val context = LocalContext.current
+    val activity = context as? Activity
     val clipboardManager = LocalClipboardManager.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -131,6 +135,9 @@ fun PackageDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .testTag("package_detail_screen"),
+        bottomBar = {
+            IronSourceBannerAd()
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -144,7 +151,10 @@ fun PackageDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = onBack,
+                        onClick = {
+                            activity?.let { AdManager.recordUserClick(it) }
+                            onBack()
+                        },
                         modifier = Modifier.testTag("detail_back_button")
                     ) {
                         Icon(
@@ -158,6 +168,7 @@ fun PackageDetailScreen(
                     // Share Button
                     IconButton(
                         onClick = {
+                            activity?.let { AdManager.recordUserClick(it) }
                             val shareText = buildString {
                                 append("📦 Status Paket ${courier.name}\n")
                                 append("No. Resi: ${packageEntity.waybill}\n")
@@ -181,7 +192,10 @@ fun PackageDetailScreen(
 
                     // Refresh Button
                     IconButton(
-                        onClick = { viewModel.refreshPackage(packageEntity) },
+                        onClick = {
+                            activity?.let { AdManager.recordUserClick(it) }
+                            viewModel.refreshPackage(packageEntity)
+                        },
                         enabled = !isLoading,
                         modifier = Modifier.testTag("detail_refresh_button")
                     ) {
@@ -194,7 +208,10 @@ fun PackageDetailScreen(
 
                     // Delete Button
                     IconButton(
-                        onClick = { showDeleteConfirm = true },
+                        onClick = {
+                            activity?.let { AdManager.recordUserClick(it) }
+                            showDeleteConfirm = true
+                        },
                         modifier = Modifier.testTag("detail_delete_button")
                     ) {
                         Icon(
@@ -284,6 +301,7 @@ fun PackageDetailScreen(
                             }
                             IconButton(
                                 onClick = {
+                                    activity?.let { AdManager.recordUserClick(it) }
                                     clipboardManager.setText(AnnotatedString(packageEntity.waybill))
                                     Toast.makeText(context, "Resi ${packageEntity.waybill} disalin!", Toast.LENGTH_SHORT).show()
                                 },

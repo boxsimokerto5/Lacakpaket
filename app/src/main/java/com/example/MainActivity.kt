@@ -22,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ads.AdManager
+import com.example.ads.ui.InterstitialTriggerDialog
 import com.example.notification.NotificationHelper
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.PackageDetailScreen
@@ -45,6 +47,9 @@ class MainActivity : ComponentActivity() {
         // Create notification channel
         NotificationHelper.createNotificationChannel(this)
 
+        // Initialize IronSource and Meta Audience Network mediation
+        AdManager.initialize(this)
+
         setContent {
             MyApplicationTheme {
                 // Request Notification Permission on Android 13+ (Tiramisu)
@@ -66,6 +71,13 @@ class MainActivity : ComponentActivity() {
 
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+                val showFallbackInterstitial by AdManager.showFallbackInterstitial.collectAsStateWithLifecycle()
+
+                if (showFallbackInterstitial) {
+                    InterstitialTriggerDialog(
+                        onDismiss = { AdManager.dismissFallbackInterstitial() }
+                    )
+                }
 
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Crossfade(
@@ -106,5 +118,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        AdManager.onResume(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        AdManager.onPause(this)
     }
 }

@@ -1,9 +1,13 @@
 package com.example.ui.screens
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ads.AdManager
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,27 +30,37 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,8 +96,11 @@ fun SettingsScreen(
     BackHandler { onBack() }
 
     val context = LocalContext.current
+    val activity = context as? Activity
+    val clickCount by AdManager.clickCount.collectAsStateWithLifecycle()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showAppKeyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier
@@ -265,6 +283,172 @@ fun SettingsScreen(
                 }
             }
 
+            // Monetization & Ads Card (ironSource + Meta Audience Network)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "MONETISASI & INTEGRASI IKLAN",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 0.8.sp
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFDCFCE7))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "TERKONEKSI",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF15803D)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Mediation Status
+                    Surface(
+                        color = Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Campaign,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0284C7),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "IronSource Mediation (v8.6.0)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "• Adapter Jaringan: Meta Audience Network (Facebook v4.3.45)\n• Unit Iklan: Banner (Bawah Layar), Native (Feed Resi), Interstitial (8 Klik)",
+                                fontSize = 11.sp,
+                                color = Color(0xFF475569),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Click Progress Tracker
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFEFF6FF))
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Tv,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2563EB),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Pemicu Interstitial",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E3A8A)
+                                )
+                            }
+                            Text(
+                                text = "$clickCount / ${AdManager.CLICKS_PER_INTERSTITIAL} Klik",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF2563EB)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LinearProgressIndicator(
+                            progress = { (clickCount.toFloat() / AdManager.CLICKS_PER_INTERSTITIAL).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = Color(0xFF2563EB),
+                            trackColor = Color(0xFFBFDBFE)
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Iklan Interstitial akan tampil otomatis saat mencapai 8 klik interaksi (membuka paket, salin resi, filter status, tambah resi).",
+                            fontSize = 10.sp,
+                            color = Color(0xFF1E40AF),
+                            lineHeight = 14.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Test Interstitial Button
+                    Button(
+                        onClick = {
+                            activity?.let { AdManager.showInterstitial(it) }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .testTag("test_interstitial_button"),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                    ) {
+                        Icon(Icons.Default.Tv, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Uji Tampilkan Interstitial Sekarang", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Edit App Key Button
+                    OutlinedButton(
+                        onClick = { showAppKeyDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .testTag("edit_app_key_button"),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Pengaturan IronSource App Key", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    }
+                }
+            }
+
             // Supported Couriers Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -355,13 +539,55 @@ fun SettingsScreen(
         }
     }
 
-    // Dialogs
+    // Bottom Sheet Popups (Slide from bottom)
     if (showAboutDialog) {
-        AboutUsDialog(onDismiss = { showAboutDialog = false })
+        AboutUsBottomSheet(onDismiss = { showAboutDialog = false })
     }
 
     if (showPrivacyDialog) {
-        PrivacyPolicyDialog(onDismiss = { showPrivacyDialog = false })
+        PrivacyPolicyBottomSheet(onDismiss = { showPrivacyDialog = false })
+    }
+
+    if (showAppKeyDialog) {
+        var tempKey by remember { mutableStateOf(AdManager.getIronSourceAppKey(context)) }
+        AlertDialog(
+            onDismissRequest = { showAppKeyDialog = false },
+            title = { Text("IronSource App Key", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        text = "Masukkan App Key resmi akun ironSource LevelPlay Anda untuk mengaktifkan iklan produksi. Default menggunakan Demo App Key resmi (${AdManager.DEFAULT_DEMO_APP_KEY}).",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B),
+                        lineHeight = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = tempKey,
+                        onValueChange = { tempKey = it },
+                        label = { Text("IronSource App Key") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        AdManager.setIronSourceAppKey(context, tempKey)
+                        activity?.let { AdManager.initialize(it) }
+                        showAppKeyDialog = false
+                    }
+                ) {
+                    Text("Simpan & Inisialisasi")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAppKeyDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }
 
@@ -432,42 +658,67 @@ fun SettingsActionRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutUsDialog(onDismiss: () -> Unit) {
-    AlertDialog(
+fun AboutUsBottomSheet(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        icon = {
-            Image(
-                painter = painterResource(id = R.drawable.app_logo),
-                contentDescription = "Logo Lacak Paket",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(14.dp))
-            )
-        },
-        title = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Lacak Paket",
-                    fontWeight = FontWeight.Black,
-                    fontSize = 20.sp,
-                    color = Color(0xFF0F172A)
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("about_us_bottom_sheet")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.75f)
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp)
+        ) {
+            // Header with App Logo & Title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.app_logo),
+                    contentDescription = "Logo Lacak Paket",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
                 )
-                Text(
-                    text = "Versi 1.0 • Gecko Creator",
-                    fontSize = 12.sp,
-                    color = Color(0xFF64748B),
-                    fontWeight = FontWeight.SemiBold
-                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Tentang Kami",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = "Lacak Paket • Versi 1.0 (Gecko Creator)",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
             }
-        },
-        text = {
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Scrollable Content
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "Lacak Paket adalah aplikasi pelacak pengiriman kurir logistik multi-ekspedisi yang dirancang untuk memudahkan pemantauan resi belanja dan pengiriman barang di seluruh Indonesia secara cepat, akurat, dan transparan.",
@@ -475,55 +726,135 @@ fun AboutUsDialog(onDismiss: () -> Unit) {
                     color = Color(0xFF334155),
                     lineHeight = 18.sp
                 )
+
                 Surface(
-                    color = Color(0xFFF1F5F9),
-                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
-                            text = "✨ FITUR UNGGULAN",
+                            text = "✨ FITUR UNGGULAN APLIKASI",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 0.5.sp
                         )
                         Text(
-                            text = "• Mendukung 11+ kurir terpopuler Indonesia\n• Notifikasi pintar saat ada perubahan status\n• Penyimpanan database lokal aman & tanpa biaya\n• Tampilan modern dan mudah digunakan",
+                            text = "• Mendukung 11+ kurir logistik terpopuler Indonesia (JNE, J&T, SiCepat, Shopee SPX, AnterAja, Pos Indonesia, Lion Parcel, IDexpress, Ninja, Wahana, TIKI)\n• 100% Data Asli langsung dari server ekspedisi kurir\n• Notifikasi pintar otomatis saat terjadi pembaruan status\n• Penyimpanan database lokal aman & tanpa perlu akun login\n• Tampilan modern, responsif, dan mudah digunakan",
                             fontSize = 12.sp,
                             color = Color(0xFF475569),
-                            lineHeight = 17.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
+
+                Surface(
+                    color = Color(0xFFFEF2F2),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Pengembang: Gecko Creator",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF991B1B)
+                            )
+                            Text(
+                                text = "ID Paket: com.lacakpaket.gecckocreator • Rilis 2026",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7F1D1D)
+                            )
+                        }
+                    }
+                }
+
                 Text(
-                    text = "Dibuat dengan penuh dedikasi oleh tim Gecko Creator untuk mempermudah pengalaman belanja online seluruh masyarakat Indonesia.",
+                    text = "Dibuat dengan penuh dedikasi oleh tim Gecko Creator untuk mempermudah pengalaman belanja online dan logistik masyarakat Indonesia.",
                     fontSize = 12.sp,
                     color = Color(0xFF64748B),
                     lineHeight = 16.sp
                 )
+
+                Spacer(modifier = Modifier.height(6.dp))
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Tutup", fontWeight = FontWeight.Bold)
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("about_close_button")
+                ) {
+                    Text("Tutup", fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = { launchShareApp(context) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .height(48.dp)
+                        .testTag("about_share_button")
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Bagikan App", fontWeight = FontWeight.Bold)
+                }
             }
         }
-    )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
-    AlertDialog(
+fun PrivacyPolicyBottomSheet(onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("privacy_policy_bottom_sheet")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.75f)
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFFDCFCE7)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -531,114 +862,174 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                         imageVector = Icons.Default.Security,
                         contentDescription = null,
                         tint = Color(0xFF15803D),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Kebijakan Privasi",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
+                        fontSize = 18.sp,
                         color = Color(0xFF0F172A)
                     )
                     Text(
                         text = "Lacak Paket & Gecko Creator",
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         color = Color(0xFF64748B)
                     )
                 }
             }
-        },
-        text = {
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Scrollable Content
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Terakhir diperbarui: Oktober 2026\n\nKami menghargai privasi setiap pengguna. Kebijakan Privasi ini menjelaskan komitmen kami dalam mengelola data aplikasi:",
+                    text = "Terakhir diperbarui: Oktober 2026\n\nKami sangat menghargai privasi dan kepercayaan setiap pengguna aplikasi Lacak Paket. Kebijakan Privasi ini menjelaskan komitmen dan transparansi kami dalam mengelola data Anda:",
                     fontSize = 12.sp,
                     color = Color(0xFF334155),
                     lineHeight = 17.sp
                 )
 
-                Text(
-                    text = "1. Penyimpanan Data Lokal",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Text(
-                    text = "Aplikasi Lacak Paket tidak mewajibkan pendaftaran akun ataupun mengumpulkan data identitas pribadi Anda. Nomor resi dan catatan barang yang Anda simpan tersimpan secara lokal dan aman di ponsel Anda menggunakan teknologi database SQLite (Room).",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    lineHeight = 16.sp
-                )
-
-                Text(
-                    text = "2. Izin Perangkat (Permissions)",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Text(
-                    text = "• Akses Internet: Dibutuhkan untuk memeriksa dan mengambil riwayat checkpoint dari server resmi kurir pengiriman.\n• Notifikasi: Digunakan semata-mata untuk memberi tahu Anda saat terjadi perubahan status nyata pada paket Anda.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    lineHeight = 16.sp
-                )
-
-                Text(
-                    text = "3. Keamanan Data & Pihak Ketiga",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Text(
-                    text = "Seluruh koneksi internet menggunakan enkripsi SSL/TLS (HTTPS). Kami tidak pernah menjual, menyewakan, atau menyalahgunakan data nomor resi Anda ke pihak ketiga manapun.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    lineHeight = 16.sp
-                )
-
-                Text(
-                    text = "4. Hak Pengguna",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Text(
-                    text = "Anda memiliki kendali penuh untuk menghapus data nomor resi atau riwayat pelacakan kapan saja langsung dari aplikasi.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    lineHeight = 16.sp
-                )
+                Surface(
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "1. Penyimpanan Data Lokal & Bebas Akun",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Aplikasi Lacak Paket tidak mewajibkan pembuatan akun atau login, serta tidak mengumpulkan data pribadi sensitif seperti identitas KTP, nomor telepon, atau kata sandi. Seluruh daftar nomor resi dan catatan paket yang Anda simpan tersimpan secara lokal dan privat di memori perangkat Anda (Room SQLite).",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
 
                 Surface(
                     color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "2. Izin Perangkat (Permissions)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "• Akses Internet: Digunakan semata-mata untuk menghubungi server resmi ekspedisi kurir guna mengambil status pengiriman asli nomor resi Anda.\n• Notifikasi: Digunakan untuk memberi pemberitahuan saat terjadi perubahan status nyata pada nomor resi aktif Anda.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Surface(
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "3. Keamanan Data & Pihak Ketiga",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Seluruh transmisi data pelacakan dilindungi oleh protokol enkripsi SSL/TLS (HTTPS). Kami tidak pernah menjual, menyewakan, membagikan, ataupun memanfaatkan data riwayat pelacakan Anda kepada pengiklan atau pihak ketiga manapun.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Surface(
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "4. Hak Penuh Pengguna",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Anda memiliki kendali 100% atas data Anda. Anda dapat menghapus riwayat nomor resi kapan saja secara instan melalui tombol hapus di detail paket.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Surface(
+                    color = Color(0xFFF0FDF4),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Kontak Pengembang:\nGecko Creator (geckocreator.dev@gmail.com)",
+                        text = "Kontak Resmi Pengembang:\nGecko Creator (geckocreator.dev@gmail.com)\nPaket: com.lacakpaket.gecckocreator",
                         fontSize = 11.sp,
-                        color = Color(0xFF64748B),
-                        modifier = Modifier.padding(10.dp)
+                        color = Color(0xFF166534),
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
             }
-        },
-        confirmButton = {
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Action Button
             Button(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("privacy_agree_button")
             ) {
-                Text("Saya Mengerti", fontWeight = FontWeight.Bold)
+                Text("Saya Mengerti", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
-    )
+    }
 }
 
 fun launchRateApp(context: Context) {

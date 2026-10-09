@@ -19,6 +19,9 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
+    maven {
+      url = java.net.URI.create("https://android-sdk.is.com/")
+    }
   }
 }
 

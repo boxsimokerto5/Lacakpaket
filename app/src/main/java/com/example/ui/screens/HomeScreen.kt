@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -7,6 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.res.painterResource
+import com.example.ads.AdManager
+import com.example.ads.ui.IronSourceBannerAd
+import com.example.ads.ui.NativeAdCard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,6 +108,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -120,6 +125,9 @@ fun HomeScreen(
             .fillMaxSize()
             .testTag("home_screen"),
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            IronSourceBannerAd()
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -157,7 +165,10 @@ fun HomeScreen(
 
                 actions = {
                     IconButton(
-                        onClick = { viewModel.refreshAll() },
+                        onClick = {
+                            activity?.let { AdManager.recordUserClick(it) }
+                            viewModel.refreshAll()
+                        },
                         enabled = !uiState.isRefreshingAll,
                         modifier = Modifier.testTag("refresh_all_button")
                     ) {
@@ -257,7 +268,10 @@ fun HomeScreen(
 
                 FilterChip(
                     selected = uiState.filterTab == "ALL",
-                    onClick = { viewModel.setFilterTab("ALL") },
+                    onClick = {
+                        activity?.let { AdManager.recordUserClick(it) }
+                        viewModel.setFilterTab("ALL")
+                    },
                     label = { Text("Semua ($totalCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -268,7 +282,10 @@ fun HomeScreen(
                 )
                 FilterChip(
                     selected = uiState.filterTab == "ACTIVE",
-                    onClick = { viewModel.setFilterTab("ACTIVE") },
+                    onClick = {
+                        activity?.let { AdManager.recordUserClick(it) }
+                        viewModel.setFilterTab("ACTIVE")
+                    },
                     label = { Text("Dalam Perjalanan ($activeCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFFF97316),
@@ -279,7 +296,10 @@ fun HomeScreen(
                 )
                 FilterChip(
                     selected = uiState.filterTab == "DELIVERED",
-                    onClick = { viewModel.setFilterTab("DELIVERED") },
+                    onClick = {
+                        activity?.let { AdManager.recordUserClick(it) }
+                        viewModel.setFilterTab("DELIVERED")
+                    },
                     label = { Text("Terkirim ($deliveredCount)", fontWeight = FontWeight.SemiBold, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF10B981),
@@ -295,7 +315,10 @@ fun HomeScreen(
             if (uiState.filteredPackages.isEmpty()) {
                 EmptyStateView(
                     isSearch = uiState.searchQuery.isNotBlank(),
-                    onOpenAddDialog = { showAddDialog = true }
+                    onOpenAddDialog = {
+                        activity?.let { AdManager.recordUserClick(it) }
+                        showAddDialog = true
+                    }
                 )
             } else {
                 LazyColumn(
@@ -309,10 +332,24 @@ fun HomeScreen(
                     ) { pkg ->
                         BrightPackageCardItem(
                             pkg = pkg,
-                            onClick = { onNavigateToDetail(pkg.id) },
+                            onClick = {
+                                activity?.let { AdManager.recordUserClick(it) }
+                                onNavigateToDetail(pkg.id)
+                            },
                             onCopyWaybill = {
+                                activity?.let { AdManager.recordUserClick(it) }
                                 clipboardManager.setText(AnnotatedString(pkg.waybill))
                                 Toast.makeText(context, "Resi ${pkg.waybill} disalin!", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+
+                    // Native Ad integrated into package feed
+                    item {
+                        NativeAdCard(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            onAdClicked = {
+                                activity?.let { AdManager.recordUserClick(it) }
                             }
                         )
                     }
@@ -330,6 +367,7 @@ fun HomeScreen(
             isLoading = uiState.isLoading,
             onDismiss = { showAddDialog = false },
             onSubmit = { waybill, courierCode, customTitle ->
+                activity?.let { AdManager.recordUserClick(it) }
                 viewModel.trackAndSavePackage(waybill, courierCode, customTitle) { success, _ ->
                     if (success) {
                         showAddDialog = false
@@ -678,6 +716,13 @@ fun EmptyStateView(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Native Ad preview
+            NativeAdCard(
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
