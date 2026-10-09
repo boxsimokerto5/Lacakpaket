@@ -484,23 +484,19 @@ fun BrightPackageCardItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            // Colorful left accent bar using courier brand color
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Colorful left accent bar using courier brand color (matches card height smoothly)
             Box(
                 modifier = Modifier
                     .width(6.dp)
-                    .fillMaxHeight()
+                    .matchParentSize()
                     .background(courier.brandColor)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp)
+                    .padding(start = 18.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
             ) {
                 // Row 1: Courier Badge + Courier Name on left, Status Badge on right
                 Row(
@@ -575,30 +571,54 @@ fun BrightPackageCardItem(
                     )
                 }
 
-                // Origin -> Destination
-                if (pkg.origin.isNotBlank() && pkg.destination.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = pkg.origin,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF64748B)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = pkg.destination,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF64748B)
-                        )
+                // Origin -> Destination (Cleaned of extreme asterisks, bounded with weight and ellipsis)
+                val cleanOrigin = remember(pkg.origin) {
+                    com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(pkg.origin)
+                }
+                val cleanDest = remember(pkg.destination) {
+                    com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(pkg.destination)
+                }
+
+                if (cleanOrigin.isNotBlank() || cleanDest.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (cleanOrigin.isNotBlank()) {
+                            Text(
+                                text = cleanOrigin,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                        }
+
+                        if (cleanOrigin.isNotBlank() && cleanDest.isNotBlank()) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+
+                        if (cleanDest.isNotBlank()) {
+                            Text(
+                                text = cleanDest,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                        }
                     }
                 }
 
@@ -606,13 +626,15 @@ fun BrightPackageCardItem(
 
                 // Latest Checkpoint Banner
                 val enrichedHomeDesc = remember(pkg) {
-                    com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
-                        rawNote = pkg.statusDescription,
+                    val raw = pkg.statusDescription.ifBlank { "Paket sedang dalam perjalanan logistik" }
+                    val enriched = com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
+                        rawNote = raw,
                         location = "",
                         isFirst = true,
                         isLast = false,
                         isDelivered = pkg.isDelivered
                     )
+                    enriched.ifBlank { "Paket sedang dalam proses perjalanan logistik menuju lokasi tujuan." }
                 }
                 Surface(
                     color = if (pkg.isDelivered) Color(0xFFF0FDF4) else Color(0xFFEFF6FF),

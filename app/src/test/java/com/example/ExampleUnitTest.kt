@@ -1,6 +1,7 @@
 package com.example
 
 import com.example.ads.AdManager
+import com.example.data.remote.TrackingApiBridge
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -14,6 +15,16 @@ class ExampleUnitTest {
         assertEquals("haijoq497a755vwc", AdManager.NATIVE_AD_UNIT_ID)
         assertEquals(8, AdManager.CLICKS_PER_INTERSTITIAL)
         assertNotNull(AdManager.isInitialized)
+    }
+
+    @Test
+    fun testSanitizeMaskedText() {
+        val longAsterisks = "Manukan,********************************************************************************************104. "
+        val cleaned = TrackingApiBridge.sanitizeMaskedText(longAsterisks)
+        assertEquals("Manukan, *** 104.", cleaned)
+
+        val normalCity = "Jakarta Selatan"
+        assertEquals("Jakarta Selatan", TrackingApiBridge.sanitizeMaskedText(normalCity))
     }
 }
 

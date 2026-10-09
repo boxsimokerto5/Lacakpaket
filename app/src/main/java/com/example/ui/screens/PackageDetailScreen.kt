@@ -414,14 +414,20 @@ fun PackageDetailScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            val hasOrigin = packageEntity.origin.isNotBlank()
-                            val hasDest = packageEntity.destination.isNotBlank()
+                            val cleanOrig = remember(packageEntity.origin) {
+                                com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(packageEntity.origin)
+                            }
+                            val cleanDst = remember(packageEntity.destination) {
+                                com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(packageEntity.destination)
+                            }
+                            val hasOrigin = cleanOrig.isNotBlank()
+                            val hasDest = cleanDst.isNotBlank()
                             val routeText = if (hasOrigin && hasDest) {
-                                "${packageEntity.origin} → ${packageEntity.destination}"
+                                "$cleanOrig → $cleanDst"
                             } else if (hasOrigin) {
-                                "Asal: ${packageEntity.origin}"
+                                "Asal: $cleanOrig"
                             } else if (hasDest) {
-                                "Tujuan: ${packageEntity.destination}"
+                                "Tujuan: $cleanDst"
                             } else {
                                 "Jalur Resmi ${courier.name}"
                             }
@@ -429,7 +435,9 @@ fun PackageDetailScreen(
                                 text = routeText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF475569)
+                                color = Color(0xFF475569),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 

@@ -193,21 +193,24 @@ object TrackingApiBridge {
             }
 
             val courierName = summary?.optString("courier", courierObj.name) ?: courierObj.name
+            val rawSummaryDesc = summary?.optString("desc", "")?.trim().orEmpty()
+            val finalStatusDesc = rawSummaryDesc.ifBlank {
+                checkpoints.firstOrNull()?.description ?: "Paket sedang dalam perjalanan logistik"
+            }
 
             TrackingResult(
                 success = true,
                 message = "Berhasil memuat data asli dari kurir logistik",
                 courierCode = safeCourier,
                 courierName = courierName,
-                waybill = summary?.optString("awb", safeWaybill) ?: safeWaybill,
+                waybill = summary?.optString("awb", safeWaybill)?.ifBlank { safeWaybill } ?: safeWaybill,
                 status = if (isDelivered) "DELIVERED" else "ON_PROCESS",
-                statusDescription = summary?.optString("desc", checkpoints.firstOrNull()?.description ?: "Dalam perjalanan")
-                    ?: (checkpoints.firstOrNull()?.description ?: "Dalam perjalanan"),
+                statusDescription = finalStatusDesc,
                 isDelivered = isDelivered,
-                origin = detail?.optString("origin", "") ?: "",
-                destination = detail?.optString("destination", "") ?: "",
-                shipper = detail?.optString("shipper", "") ?: "",
-                receiver = "",
+                origin = sanitizeMaskedText(detail?.optString("origin", "") ?: ""),
+                destination = sanitizeMaskedText(detail?.optString("destination", "") ?: ""),
+                shipper = sanitizeMaskedText(detail?.optString("shipper", "") ?: ""),
+                receiver = sanitizeMaskedText(detail?.optString("receiver", "") ?: ""),
                 checkpoints = checkpoints
             )
         } catch (e: Exception) {
@@ -222,6 +225,17 @@ object TrackingApiBridge {
                 isDelivered = false
             )
         }
+    }
+
+    /**
+     * Sanitizes long sequences of privacy-masked asterisks (common in J&T and other courier APIs)
+     * e.g. "Manukan,************************************************************104." -> "Manukan, *** 104."
+     */
+    fun sanitizeMaskedText(raw: String): String {
+        if (raw.isBlank()) return ""
+        return raw.replace(Regex("\\*{3,}"), " *** ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
     }
 
     /**

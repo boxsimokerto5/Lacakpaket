@@ -1,13 +1,10 @@
 package com.example.ui.screens
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.ads.AdManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,16 +28,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,11 +43,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -97,11 +88,8 @@ fun SettingsScreen(
     BackHandler { onBack() }
 
     val context = LocalContext.current
-    val activity = context as? Activity
-    val clickCount by AdManager.clickCount.collectAsStateWithLifecycle()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
-    var showAppKeyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier
@@ -284,172 +272,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Monetization & Ads Card (ironSource + Meta Audience Network)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "MONETISASI & INTEGRASI IKLAN",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 0.8.sp
-                        )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFDCFCE7))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "TERKONEKSI",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF15803D)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Mediation Status
-                    Surface(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Campaign,
-                                    contentDescription = null,
-                                    tint = Color(0xFF0284C7),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "IronSource Mediation (App Key: ${AdManager.getIronSourceAppKey(context)})",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "• Banner: ${AdManager.BANNER_AD_UNIT_NAME} (${AdManager.BANNER_AD_UNIT_ID})\n• Interstitial: ${AdManager.INTERSTITIAL_AD_UNIT_NAME} (${AdManager.INTERSTITIAL_AD_UNIT_ID})\n• Native: ${AdManager.NATIVE_AD_UNIT_NAME} (${AdManager.NATIVE_AD_UNIT_ID})\n• Mediasi: Meta Audience Network (Facebook)",
-                                fontSize = 11.sp,
-                                color = Color(0xFF475569),
-                                lineHeight = 16.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Click Progress Tracker
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFEFF6FF))
-                            .padding(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Tv,
-                                    contentDescription = null,
-                                    tint = Color(0xFF2563EB),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Pemicu Interstitial",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E3A8A)
-                                )
-                            }
-                            Text(
-                                text = "$clickCount / ${AdManager.CLICKS_PER_INTERSTITIAL} Klik",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF2563EB)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        LinearProgressIndicator(
-                            progress = { (clickCount.toFloat() / AdManager.CLICKS_PER_INTERSTITIAL).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = Color(0xFF2563EB),
-                            trackColor = Color(0xFFBFDBFE)
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = "Iklan Interstitial akan tampil otomatis saat mencapai 8 klik interaksi (membuka paket, salin resi, filter status, tambah resi).",
-                            fontSize = 10.sp,
-                            color = Color(0xFF1E40AF),
-                            lineHeight = 14.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Test Interstitial Button
-                    Button(
-                        onClick = {
-                            activity?.let { AdManager.showInterstitial(it) }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .testTag("test_interstitial_button"),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
-                    ) {
-                        Icon(Icons.Default.Tv, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Uji Tampilkan Interstitial Sekarang", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Edit App Key Button
-                    OutlinedButton(
-                        onClick = { showAppKeyDialog = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .testTag("edit_app_key_button"),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pengaturan IronSource App Key", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                    }
-                }
-            }
-
             // Supported Couriers Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -547,48 +369,6 @@ fun SettingsScreen(
 
     if (showPrivacyDialog) {
         PrivacyPolicyBottomSheet(onDismiss = { showPrivacyDialog = false })
-    }
-
-    if (showAppKeyDialog) {
-        var tempKey by remember { mutableStateOf(AdManager.getIronSourceAppKey(context)) }
-        AlertDialog(
-            onDismissRequest = { showAppKeyDialog = false },
-            title = { Text("IronSource App Key", fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text(
-                        text = "Masukkan App Key resmi akun ironSource LevelPlay Anda untuk mengaktifkan iklan produksi. Default menggunakan App Key resmi (${AdManager.DEFAULT_APP_KEY}).",
-                        fontSize = 12.sp,
-                        color = Color(0xFF64748B),
-                        lineHeight = 16.sp
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    OutlinedTextField(
-                        value = tempKey,
-                        onValueChange = { tempKey = it },
-                        label = { Text("IronSource App Key") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        AdManager.setIronSourceAppKey(context, tempKey)
-                        activity?.let { AdManager.initialize(it) }
-                        showAppKeyDialog = false
-                    }
-                ) {
-                    Text("Simpan & Inisialisasi")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showAppKeyDialog = false }) {
-                    Text("Batal")
-                }
-            }
-        )
     }
 }
 
