@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ads.AdManager
+import com.example.update.InAppUpdateHelper
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
@@ -98,6 +101,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val clickCount by AdManager.clickCount.collectAsStateWithLifecycle()
+    val updateStatusMsg by InAppUpdateHelper.statusMessage.collectAsStateWithLifecycle()
+    val isUpdateDownloaded by InAppUpdateHelper.isDownloaded.collectAsStateWithLifecycle()
+    val isDownloadingUpdate by InAppUpdateHelper.isDownloading.collectAsStateWithLifecycle()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showAppKeyDialog by remember { mutableStateOf(false) }
@@ -208,6 +214,136 @@ fun SettingsScreen(
                                 fontSize = 11.sp,
                                 color = Color(0xFF475569),
                                 lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Google Play Store In-App Updates Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("play_store_update_card"),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFE0F2FE)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SystemUpdate,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0284C7),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Pembaruan Versi Otomatis",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "Google Play In-App Update API",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFDCFCE7))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "PLAY STORE",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF15803D)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Surface(
+                        color = Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Status: $updateStatusMsg",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Saat versi baru diunggah ke Google Play Console, aplikasi akan secara otomatis memunculkan dialog pembaruan resmi Play Store tanpa harus membuka browser.",
+                                fontSize = 11.sp,
+                                color = Color(0xFF475569),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (isUpdateDownloaded) {
+                        Button(
+                            onClick = { InAppUpdateHelper.completeUpdate() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("install_downloaded_update_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))
+                        ) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Pasang Pembaruan & Mulai Ulang", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                activity?.let { act ->
+                                    InAppUpdateHelper.checkForUpdates(act, immediate = false) { _, msg ->
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            enabled = !isDownloadingUpdate,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("check_play_store_update_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                        ) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isDownloadingUpdate) "Sedang Mengunduh..." else "Periksa Pembaruan Play Store",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
                             )
                         }
                     }
@@ -336,7 +472,7 @@ fun SettingsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "IronSource Mediation (v8.6.0)",
+                                    text = "IronSource Mediation (App Key: ${AdManager.getIronSourceAppKey(context)})",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A)
@@ -344,7 +480,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "• Adapter Jaringan: Meta Audience Network (Facebook v4.3.45)\n• Unit Iklan: Banner (Bawah Layar), Native (Feed Resi), Interstitial (8 Klik)",
+                                text = "• Banner: ${AdManager.BANNER_AD_UNIT_NAME} (${AdManager.BANNER_AD_UNIT_ID})\n• Interstitial: ${AdManager.INTERSTITIAL_AD_UNIT_NAME} (${AdManager.INTERSTITIAL_AD_UNIT_ID})\n• Native: ${AdManager.NATIVE_AD_UNIT_NAME} (${AdManager.NATIVE_AD_UNIT_ID})\n• Mediasi: Meta Audience Network (Facebook)",
                                 fontSize = 11.sp,
                                 color = Color(0xFF475569),
                                 lineHeight = 16.sp
@@ -556,7 +692,7 @@ fun SettingsScreen(
             text = {
                 Column {
                     Text(
-                        text = "Masukkan App Key resmi akun ironSource LevelPlay Anda untuk mengaktifkan iklan produksi. Default menggunakan Demo App Key resmi (${AdManager.DEFAULT_DEMO_APP_KEY}).",
+                        text = "Masukkan App Key resmi akun ironSource LevelPlay Anda untuk mengaktifkan iklan produksi. Default menggunakan App Key resmi (${AdManager.DEFAULT_APP_KEY}).",
                         fontSize = 12.sp,
                         color = Color(0xFF64748B),
                         lineHeight = 16.sp

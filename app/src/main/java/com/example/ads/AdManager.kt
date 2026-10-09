@@ -29,8 +29,19 @@ object AdManager {
     private const val PREFS_NAME = "ad_preferences"
     private const val KEY_APP_KEY = "ironsource_app_key"
 
-    // Default IronSource test app key (LevelPlay official demo key)
-    const val DEFAULT_DEMO_APP_KEY = "854609f3"
+    // Official ironSource App Key & Ad Units from user's dashboard
+    const val DEFAULT_APP_KEY = "28979fc9d"
+
+    // Ad Unit IDs (IronSource & Meta Audience Network)
+    const val BANNER_AD_UNIT_ID = "a49w6q65xfz50ql6"
+    const val BANNER_AD_UNIT_NAME = "Banner Lacak Paket"
+
+    const val INTERSTITIAL_AD_UNIT_ID = "3i8ol7cfj1i6831c"
+    const val INTERSTITIAL_AD_UNIT_NAME = "Intersitial Lacak Paket"
+
+    const val NATIVE_AD_UNIT_ID = "haijoq497a755vwc"
+    const val NATIVE_AD_UNIT_NAME = "Native Lacak Paket"
+
     const val CLICKS_PER_INTERSTITIAL = 8
 
     private val _clickCount = MutableStateFlow(0)
@@ -49,7 +60,7 @@ object AdManager {
     }
 
     fun getIronSourceAppKey(context: Context): String {
-        return getPrefs(context).getString(KEY_APP_KEY, DEFAULT_DEMO_APP_KEY) ?: DEFAULT_DEMO_APP_KEY
+        return getPrefs(context).getString(KEY_APP_KEY, DEFAULT_APP_KEY) ?: DEFAULT_APP_KEY
     }
 
     fun setIronSourceAppKey(context: Context, appKey: String) {
@@ -69,8 +80,12 @@ object AdManager {
             IronSource.setConsent(true)
 
             // 2. Initialize Meta Audience Network SDK directly for optimum mediation readiness
-            AudienceNetworkAds.initialize(activity)
-            Log.d(TAG, "Meta Audience Network SDK initialized successfully")
+            try {
+                AudienceNetworkAds.initialize(activity)
+                Log.d(TAG, "Meta Audience Network SDK initialized successfully")
+            } catch (e: Throwable) {
+                Log.w(TAG, "Meta Audience Network initialization notice: ${e.message}")
+            }
 
             // 3. Set LevelPlay Interstitial Listener
             IronSource.setLevelPlayInterstitialListener(object : LevelPlayInterstitialListener {
@@ -176,8 +191,12 @@ object AdManager {
     fun showInterstitial(activity: Activity) {
         try {
             if (IronSource.isInterstitialReady()) {
-                Log.d(TAG, "Showing IronSource live Interstitial")
-                IronSource.showInterstitial("DefaultPlacement")
+                Log.d(TAG, "Showing IronSource live Interstitial with ID: $INTERSTITIAL_AD_UNIT_ID")
+                try {
+                    IronSource.showInterstitial(INTERSTITIAL_AD_UNIT_ID)
+                } catch (_: Exception) {
+                    IronSource.showInterstitial()
+                }
             } else {
                 Log.d(TAG, "Interstitial not ready yet. Showing notification fallback & reloading.")
                 _showFallbackInterstitial.value = true

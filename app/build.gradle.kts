@@ -130,6 +130,8 @@ dependencies {
   implementation(libs.ironsource.facebookadapter)
   implementation(libs.meta.audience.network)
   implementation(libs.play.services.ads.identifier)
+  implementation(libs.play.app.update)
+  implementation(libs.play.app.update.ktx)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

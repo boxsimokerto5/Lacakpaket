@@ -86,7 +86,11 @@ fun IronSourceBannerAd(
                 })
 
                 if (layout != null) {
-                    IronSource.loadBanner(layout)
+                    try {
+                        IronSource.loadBanner(layout, AdManager.BANNER_AD_UNIT_ID)
+                    } catch (_: Throwable) {
+                        IronSource.loadBanner(layout)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("IronSourceBanner", "Error initiating banner: ${e.message}")

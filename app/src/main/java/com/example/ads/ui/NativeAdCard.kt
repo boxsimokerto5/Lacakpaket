@@ -45,7 +45,7 @@ fun NativeAdCard(
     modifier: Modifier = Modifier,
     title: String = "Ekspedisi & Logistik Terpercaya",
     body: String = "Hemat ongkos kirim hingga 50% untuk pengiriman paket belanja online Anda ke seluruh Nusantara.",
-    sponsorName: String = "Sponsor • Meta Audience Network",
+    sponsorName: String = "Sponsor • ${AdManager.NATIVE_AD_UNIT_NAME}",
     callToAction: String = "Lihat Penawaran",
     onAdClicked: (() -> Unit)? = null
 ) {
