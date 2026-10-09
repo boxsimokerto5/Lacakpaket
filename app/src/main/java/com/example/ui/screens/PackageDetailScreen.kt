@@ -126,7 +126,7 @@ fun PackageDetailScreen(
     val checkpoints = remember(packageEntity.checkpointsJson) {
         packageEntity.parseCheckpoints()
     }
-    val dateFormat = remember { SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID")) }
+    val dateFormat = remember { SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.forLanguageTag("id-ID")) }
     val lastUpdateStr = remember(packageEntity.lastUpdated) {
         dateFormat.format(Date(packageEntity.lastUpdated))
     }

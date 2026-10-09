@@ -53,7 +53,8 @@ object AdManager {
     private val _showFallbackInterstitial = MutableStateFlow(false)
     val showFallbackInterstitial: StateFlow<Boolean> = _showFallbackInterstitial.asStateFlow()
 
-    private var isInitialized = false
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -130,11 +131,18 @@ object AdManager {
             IronSource.init(
                 activity,
                 appKey,
+                object : com.ironsource.mediationsdk.sdk.InitializationListener {
+                    override fun onInitializationComplete() {
+                        Log.d(TAG, "IronSource SDK onInitializationComplete callback received")
+                        _isInitialized.value = true
+                        loadInterstitial()
+                    }
+                },
                 IronSource.AD_UNIT.INTERSTITIAL,
                 IronSource.AD_UNIT.BANNER
             )
 
-            isInitialized = true
+            _isInitialized.value = true
             Log.d(TAG, "IronSource initialized with App Key: $appKey")
 
             // Initial load of interstitial
@@ -142,6 +150,7 @@ object AdManager {
 
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing AdManager: ${e.message}", e)
+            _isInitialized.value = true
         }
     }
 

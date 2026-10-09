@@ -4,12 +4,14 @@ import android.app.Activity
 import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,10 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ads.AdManager
 import com.ironsource.mediationsdk.ISBannerSize
 import com.ironsource.mediationsdk.IronSource
@@ -46,7 +52,8 @@ import com.ironsource.mediationsdk.sdk.LevelPlayBannerListener
 
 /**
  * IronSource & Meta Audience Network Banner Composable.
- * Embeds the real ironSource banner view with graceful fallback.
+ * Renders a standard 50dp banner ad seamlessly in the view hierarchy
+ * with automatic initialization synchronization and resilient retry logic.
  */
 @Composable
 fun IronSourceBannerAd(
@@ -55,140 +62,176 @@ fun IronSourceBannerAd(
     val context = LocalContext.current
     val activity = context as? Activity
     var isAdLoaded by remember { mutableStateOf(false) }
-    var bannerLayout by remember { mutableStateOf<IronSourceBannerLayout?>(null) }
+    var bannerLayoutRef by remember { mutableStateOf<IronSourceBannerLayout?>(null) }
+    var retryCount by remember { mutableIntStateOf(0) }
+    val isSdkInitialized by AdManager.isInitialized.collectAsStateWithLifecycle()
 
-    DisposableEffect(activity) {
-        if (activity != null) {
+    // Trigger load when SDK completes initialization if not yet loaded
+    LaunchedEffect(isSdkInitialized, bannerLayoutRef) {
+        val banner = bannerLayoutRef
+        if (isSdkInitialized && banner != null && !isAdLoaded) {
             try {
-                val layout = IronSource.createBanner(activity, ISBannerSize.BANNER)
-                bannerLayout = layout
-
-                layout?.setLevelPlayBannerListener(object : LevelPlayBannerListener {
-                    override fun onAdLoaded(adInfo: AdInfo) {
-                        Log.d("IronSourceBanner", "Banner loaded from network: ${adInfo.adNetwork}")
-                        isAdLoaded = true
-                    }
-
-                    override fun onAdLoadFailed(error: IronSourceError) {
-                        Log.w("IronSourceBanner", "Banner load failed: ${error.errorMessage} (${error.errorCode})")
-                        isAdLoaded = false
-                    }
-
-                    override fun onAdClicked(adInfo: AdInfo) {
-                        Log.d("IronSourceBanner", "Banner clicked")
-                    }
-
-                    override fun onAdLeftApplication(adInfo: AdInfo) {}
-
-                    override fun onAdScreenPresented(adInfo: AdInfo) {}
-
-                    override fun onAdScreenDismissed(adInfo: AdInfo) {}
-                })
-
-                if (layout != null) {
-                    try {
-                        IronSource.loadBanner(layout, AdManager.BANNER_AD_UNIT_ID)
-                    } catch (_: Throwable) {
-                        IronSource.loadBanner(layout)
-                    }
-                }
+                Log.d("IronSourceBanner", "SDK initialized, triggering banner load")
+                IronSource.loadBanner(banner)
             } catch (e: Exception) {
-                Log.e("IronSourceBanner", "Error initiating banner: ${e.message}")
-            }
-        }
-
-        onDispose {
-            bannerLayout?.let {
-                try {
-                    IronSource.destroyBanner(it)
-                } catch (e: Exception) {
-                    Log.w("IronSourceBanner", "Error destroying banner: ${e.message}")
-                }
+                Log.w("IronSourceBanner", "Trigger loadBanner failed: ${e.message}")
             }
         }
     }
 
-    Box(
+    Surface(
         modifier = modifier
             .fillMaxWidth()
+            .height(54.dp)
             .testTag("ironsource_banner_container"),
-        contentAlignment = Alignment.Center
+        color = Color(0xFFF8FAFC),
+        shadowElevation = 2.dp
     ) {
-        if (isAdLoaded && bannerLayout != null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            // Live Ad View container
             AndroidView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 factory = { ctx ->
                     val frameLayout = FrameLayout(ctx).apply {
                         layoutParams = FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
+                            ViewGroup.LayoutParams.MATCH_PARENT
                         )
                     }
-                    bannerLayout?.let { bl ->
-                        (bl.parent as? ViewGroup)?.removeView(bl)
-                        frameLayout.addView(bl)
+
+                    val act = (ctx as? Activity) ?: activity
+                    if (act != null) {
+                        try {
+                            val banner = IronSource.createBanner(act, ISBannerSize.BANNER)
+                            if (banner != null) {
+                                bannerLayoutRef = banner
+                                banner.setLevelPlayBannerListener(object : LevelPlayBannerListener {
+                                    override fun onAdLoaded(adInfo: AdInfo) {
+                                        Log.d("IronSourceBanner", "Banner loaded successfully: ${adInfo.adNetwork}")
+                                        act.runOnUiThread {
+                                            isAdLoaded = true
+                                        }
+                                    }
+
+                                    override fun onAdLoadFailed(error: IronSourceError) {
+                                        Log.w(
+                                            "IronSourceBanner",
+                                            "Banner load notice: ${error.errorMessage} (${error.errorCode})"
+                                        )
+                                        // Automatic graceful retry with backoff for reliable ad fill
+                                        if (retryCount < 3) {
+                                            retryCount++
+                                            frameLayout.postDelayed({
+                                                try {
+                                                    Log.d(
+                                                        "IronSourceBanner",
+                                                        "Retrying banner load (attempt $retryCount)..."
+                                                    )
+                                                    IronSource.loadBanner(banner)
+                                                } catch (e: Exception) {
+                                                    Log.w("IronSourceBanner", "Retry load error: ${e.message}")
+                                                }
+                                            }, 2500L * retryCount)
+                                        }
+                                    }
+
+                                    override fun onAdClicked(adInfo: AdInfo) {
+                                        Log.d("IronSourceBanner", "Banner clicked: ${adInfo.adNetwork}")
+                                    }
+
+                                    override fun onAdLeftApplication(adInfo: AdInfo) {}
+
+                                    override fun onAdScreenPresented(adInfo: AdInfo) {}
+
+                                    override fun onAdScreenDismissed(adInfo: AdInfo) {}
+                                })
+
+                                frameLayout.addView(banner)
+
+                                // Primary banner load attempt
+                                try {
+                                    IronSource.loadBanner(banner)
+                                } catch (e: Exception) {
+                                    Log.w("IronSourceBanner", "Initial loadBanner error: ${e.message}")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("IronSourceBanner", "Error initializing banner view: ${e.message}", e)
+                        }
                     }
                     frameLayout
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+                onRelease = { container ->
+                    for (i in 0 until container.childCount) {
+                        val child = container.getChildAt(i)
+                        if (child is IronSourceBannerLayout) {
+                            try {
+                                IronSource.destroyBanner(child)
+                            } catch (e: Exception) {
+                                Log.w("IronSourceBanner", "Error destroying banner: ${e.message}")
+                            }
+                        }
+                    }
+                    container.removeAllViews()
+                    bannerLayoutRef = null
+                }
             )
-        } else {
-            // Elegant placeholder card indicating Banner Ad presence while waiting for fill
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFFF1F5F9))
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+
+            // Sleek subtle placeholder visible smoothly before first ad fill arrives
+            AnimatedVisibility(
+                visible = !isAdLoaded,
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .background(Color(0xFFF1F5F9))
+                        .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(28.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFFE0E7FF)),
+                            .background(Color(0xFFE2E8F0)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Campaign,
                             contentDescription = null,
-                            tint = Color(0xFF4338CA),
-                            modifier = Modifier.size(18.dp)
+                            tint = Color(0xFF475569),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "IKLAN BERSAMPUR",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF64748B),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(Color(0xFFE2E8F0))
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "IronSource & Meta Audience",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                        }
+                    Text(
+                        text = "Iklan Sponsor • IronSource & Meta",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFFE2E8F0))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
                         Text(
-                            text = "Banner Aktif • Menampilkan iklan sponsor yang relevan",
-                            fontSize = 10.sp,
-                            color = Color(0xFF64748B)
+                            text = "IKLAN",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF475569)
                         )
                     }
                 }

@@ -470,7 +470,7 @@ fun BrightPackageCardItem(
     onCopyWaybill: () -> Unit
 ) {
     val courier = remember(pkg.courierCode) { CourierList.findByCode(pkg.courierCode) }
-    val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale("id", "ID")) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.forLanguageTag("id-ID")) }
     val lastUpdateText = remember(pkg.lastUpdated) { dateFormat.format(Date(pkg.lastUpdated)) }
 
     Card(
