@@ -46,9 +46,25 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
         ExtraState(
             apiKey = repository.getApiKey(),
             isNotificationEnabled = repository.isNotificationEnabled(),
-            syncIntervalMinutes = repository.getSyncIntervalMinutes()
+            syncIntervalMinutes = 30
         )
     )
+
+    init {
+        // Automatic background checker every 30 minutes
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(30L * 60 * 1000L) // 30 minutes
+                if (_extraState.value.isNotificationEnabled) {
+                    try {
+                        repository.checkAllActivePackages()
+                    } catch (_: Exception) {
+                        // Silent in background
+                    }
+                }
+            }
+        }
+    }
 
     val uiState: StateFlow<UiState> = combine(
         repository.allPackages,
@@ -139,18 +155,6 @@ class PackageViewModel(application: Application) : AndroidViewModel(application)
                 )
 
                 repository.savePackage(entity)
-
-                // Notify if enabled
-                if (_extraState.value.isNotificationEnabled) {
-                    NotificationHelper.sendPackageStatusNotification(
-                        context = getApplication(),
-                        packageTitle = entity.customTitle,
-                        waybill = entity.waybill,
-                        courierName = entity.courierName,
-                        statusDesc = entity.statusDescription,
-                        isDelivered = entity.isDelivered
-                    )
-                }
 
                 _extraState.update { it.copy(userMessage = "Paket ${courier.name} ($waybill) berhasil ditambahkan") }
                 onComplete(true, "Berhasil melacak paket")

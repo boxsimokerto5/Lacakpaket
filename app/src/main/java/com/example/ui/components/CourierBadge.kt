@@ -15,6 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.CourierList
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+
 @Composable
 fun CourierBadge(
     courierCode: String,
@@ -22,13 +27,16 @@ fun CourierBadge(
 ) {
     val courier = CourierList.findByCode(courierCode)
 
-    Box(
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(courier.brandColor)
-            .padding(horizontal = 9.dp, vertical = 5.dp)
-            .testTag("courier_badge_${courier.code}")
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("courier_badge_${courier.code}"),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        CourierLogo(courierCode = courier.code, size = 16.dp)
+        Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = courier.shortName,
             color = Color.White,

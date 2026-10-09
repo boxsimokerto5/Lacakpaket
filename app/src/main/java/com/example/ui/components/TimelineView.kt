@@ -198,6 +198,16 @@ fun TimelineItem(
         else -> Color(0xFF94A3B8)
     }
 
+    val displayDescription = androidx.compose.runtime.remember(checkpoint) {
+        com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
+            rawNote = checkpoint.description,
+            location = checkpoint.location,
+            isFirst = isLatest,
+            isLast = isLast,
+            isDelivered = isDelivered
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -270,9 +280,9 @@ fun TimelineItem(
                     }
 
                     Text(
-                        text = checkpoint.description,
+                        text = displayDescription,
                         fontSize = 14.sp,
-                        fontWeight = if (isLatest) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (isLatest) FontWeight.Bold else FontWeight.Medium,
                         color = Color(0xFF0F172A),
                         lineHeight = 20.sp
                     )

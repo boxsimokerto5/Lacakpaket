@@ -21,8 +21,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
@@ -302,6 +304,45 @@ fun PackageDetailScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    val latestCheckpoint = checkpoints.firstOrNull()
+                    val enrichedLatestStatus = remember(packageEntity, latestCheckpoint) {
+                        com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
+                            rawNote = latestCheckpoint?.description ?: packageEntity.statusDescription,
+                            location = latestCheckpoint?.location.orEmpty(),
+                            isFirst = true,
+                            isLast = checkpoints.isEmpty() || checkpoints.size == 1,
+                            isDelivered = packageEntity.isDelivered
+                        )
+                    }
+
+                    Surface(
+                        color = if (packageEntity.isDelivered) Color(0xFFDCFCE7) else Color(0xFFEFF6FF),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (packageEntity.isDelivered) Icons.Default.CheckCircle else Icons.Default.LocalShipping,
+                                contentDescription = null,
+                                tint = if (packageEntity.isDelivered) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = enrichedLatestStatus,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (packageEntity.isDelivered) Color(0xFF14532D) else Color(0xFF1E3A8A),
+                                lineHeight = 17.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
                         text = "Terakhir diperbarui: $lastUpdateStr",
                         fontSize = 11.sp,
@@ -382,70 +423,6 @@ fun PackageDetailScreen(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF475569)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Real-time Simulation Action Trigger Card with warm radiant gradient
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("simulation_trigger_card"),
-                shape = RoundedCornerShape(18.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(CoralOrangeGradient)
-                        .padding(16.dp)
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Bolt,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Uji Coba Notifikasi Real-Time",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Tekan tombol di bawah untuk memajukan status pengiriman paket dan seketika membunyikan notifikasi sistem Android.",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.95f),
-                            lineHeight = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Button(
-                            onClick = { viewModel.advanceSimulation(packageEntity.id) },
-                            enabled = !packageEntity.isDelivered && !isLoading,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White,
-                                contentColor = Color(0xFFC2410C),
-                                disabledContainerColor = Color.White.copy(alpha = 0.6f),
-                                disabledContentColor = Color(0xFF78350F)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("advance_simulation_button")
-                        ) {
-                            Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (packageEntity.isDelivered) "Paket Sudah Tiba (Selesai)" else "Simulasi Majukan Status & Kirim Notifikasi",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold
                             )
                         }
                     }

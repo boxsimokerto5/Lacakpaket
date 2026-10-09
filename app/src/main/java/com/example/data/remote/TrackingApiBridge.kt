@@ -114,15 +114,29 @@ object TrackingApiBridge {
             if (historyArray != null) {
                 for (i in 0 until historyArray.length()) {
                     val item = historyArray.getJSONObject(i)
-                    val note = item.optString("note", "")
+                    val rawNote = item.optString("desc", "")
+                        .ifBlank { item.optString("description", "") }
+                        .ifBlank { item.optString("note", "") }
+                        .ifBlank { item.optString("message", "") }
+                        .ifBlank { item.optString("status", "") }
                     val date = item.optString("updatedAt", item.optString("date", ""))
                     val location = item.optString("location", "")
+                    val isItemDelivered = (i == 0 && isDelivered) || rawNote.contains("DELIVERED", ignoreCase = true) || rawNote.contains("DITERIMA", ignoreCase = true)
+
+                    val enrichedNote = enrichStatusDescription(
+                        rawNote = rawNote,
+                        location = location,
+                        isFirst = i == 0,
+                        isLast = i == historyArray.length() - 1,
+                        isDelivered = isItemDelivered
+                    )
+
                     checkpoints.add(
                         Checkpoint(
                             dateTime = date,
-                            description = note,
+                            description = enrichedNote,
                             location = location,
-                            status = if (i == 0 && isDelivered) "DELIVERED" else "ON_PROCESS"
+                            status = if (isItemDelivered) "DELIVERED" else "ON_PROCESS"
                         )
                     )
                 }
@@ -139,7 +153,7 @@ object TrackingApiBridge {
                 waybill = summary?.optString("awb", safeWaybill) ?: safeWaybill,
                 status = if (isDelivered) "DELIVERED" else "ON_PROCESS",
                 statusDescription = summary?.optString("desc", checkpoints.firstOrNull()?.description ?: "Dalam perjalanan")
-                    ?: "Dalam perjalanan",
+                    ?: (checkpoints.firstOrNull()?.description ?: "Dalam perjalanan"),
                 isDelivered = isDelivered,
                 origin = detail?.optString("origin", "") ?: "",
                 destination = detail?.optString("destination", "") ?: "",
@@ -150,6 +164,65 @@ object TrackingApiBridge {
         } catch (_: Exception) {
             // Safe swallow - do not leak API key or break execution
             null
+        }
+    }
+
+    /**
+     * Enriches brief or empty courier checkpoint status notes into full, informative Indonesian sentences.
+     */
+    fun enrichStatusDescription(
+        rawNote: String,
+        location: String,
+        isFirst: Boolean,
+        isLast: Boolean,
+        isDelivered: Boolean
+    ): String {
+        val trimmed = rawNote.trim()
+        val loc = location.trim()
+
+        // If it's already a full sentence (more than 30 chars with multiple words), keep it
+        if (trimmed.length > 30 && trimmed.contains(" ") && trimmed.split("\\s+".toRegex()).size >= 5) {
+            return trimmed
+        }
+
+        val upper = trimmed.uppercase()
+        val locLabel = if (loc.isNotBlank()) " [$loc]" else ""
+
+        return when {
+            isFirst && (isDelivered || upper.contains("DELIVERED") || upper.contains("DITERIMA") || upper.contains("SELESAI") || upper.contains("POD")) -> {
+                "Paket telah berhasil diantar dan diterima oleh penerima di lokasi tujuan."
+            }
+            upper.contains("OUT FOR DELIVERY") || upper.contains("DELIVERY") || upper.contains("ANTAR") || upper.contains("KURIR") || upper.contains("DIANTAR") -> {
+                "Paket sedang dibawa oleh kurir logistik dan dalam perjalanan diantar langsung ke alamat tujuan Anda."
+            }
+            isFirst && !isDelivered -> {
+                if (loc.isNotBlank()) {
+                    "Paket telah tiba di pusat transit & sortir$locLabel, saat ini sedang disiapkan untuk proses pengantaran ke alamat tujuan."
+                } else {
+                    "Paket sedang dalam perjalanan menuju alamat lokasi tujuan Anda."
+                }
+            }
+            upper.contains("DEPART") || upper.contains("BERANGKAT") || upper.contains("KIRIM") -> {
+                "Paket telah diberangkatkan dari fasilitas logistik$locLabel menuju hub kota tujuan selanjutnya."
+            }
+            upper.contains("ARRIVE") || upper.contains("TIBA") || upper.contains("MASUK") || upper.contains("HUB") || upper.contains("DC") -> {
+                "Paket telah tiba dan selesai diproses di pusat transit & sortir logistik$locLabel."
+            }
+            isLast || upper.contains("PICKUP") || upper.contains("DROP") || upper.contains("INPUT") || upper.contains("MANIFEST") || upper.contains("TERIMA DARI") -> {
+                "Paket telah diserahkan ke loket ekspedisi$locLabel dan nomor resi telah aktif dalam sistem logistik."
+            }
+            trimmed.isNotBlank() && loc.isNotBlank() -> {
+                "Paket berstatus $trimmed dan saat ini sedang diproses di fasilitas logistik$locLabel."
+            }
+            trimmed.isNotBlank() -> {
+                "Status: $trimmed - Paket dalam perjalanan menuju lokasi tujuan."
+            }
+            loc.isNotBlank() -> {
+                "Paket telah tiba dan sedang diproses di fasilitas logistik$locLabel."
+            }
+            else -> {
+                "Paket sedang dalam proses perjalanan logistik menuju lokasi tujuan."
+            }
         }
     }
 }

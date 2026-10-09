@@ -135,7 +135,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
-                                text = "LacakPaket",
+                                text = "Lacak Paket",
                                 fontSize = 19.sp,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary,
@@ -566,13 +566,22 @@ fun BrightPackageCardItem(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Latest Checkpoint Banner
+                val enrichedHomeDesc = remember(pkg) {
+                    com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
+                        rawNote = pkg.statusDescription,
+                        location = "",
+                        isFirst = true,
+                        isLast = false,
+                        isDelivered = pkg.isDelivered
+                    )
+                }
                 Surface(
                     color = if (pkg.isDelivered) Color(0xFFF0FDF4) else Color(0xFFEFF6FF),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = pkg.statusDescription.ifBlank { "Paket sedang dalam proses pengiriman" },
+                        text = enrichedHomeDesc,
                         fontSize = 12.sp,
                         color = if (pkg.isDelivered) Color(0xFF166534) else Color(0xFF1E40AF),
                         maxLines = 2,
