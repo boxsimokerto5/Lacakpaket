@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import com.example.ads.AdManager
 import com.example.ads.ui.IronSourceBannerAd
 import androidx.compose.foundation.background
@@ -73,7 +74,6 @@ import com.example.ui.components.CourierBadge
 import com.example.ui.components.DeliveryProgressStepper
 import com.example.ui.components.StatusBadge
 import com.example.ui.components.TimelineView
-import com.example.ui.theme.CoralOrangeGradient
 import com.example.ui.viewmodel.PackageViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -334,8 +334,9 @@ fun PackageDetailScreen(
                     }
 
                     Surface(
-                        color = if (packageEntity.isDelivered) Color(0xFFDCFCE7) else Color(0xFFEFF6FF),
+                        color = Color.White,
                         shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -353,7 +354,7 @@ fun PackageDetailScreen(
                                 text = enrichedLatestStatus,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (packageEntity.isDelivered) Color(0xFF14532D) else Color(0xFF1E3A8A),
+                                color = Color(0xFF1E293B),
                                 lineHeight = 17.sp
                             )
                         }

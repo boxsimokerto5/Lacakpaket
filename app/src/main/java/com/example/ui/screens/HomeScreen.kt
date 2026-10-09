@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,10 +89,6 @@ import com.example.data.model.CourierList
 import com.example.ui.components.AddPackageDialog
 import com.example.ui.components.CourierBadge
 import com.example.ui.components.StatusBadge
-import com.example.ui.theme.BlueGradient
-import com.example.ui.theme.CoralOrangeGradient
-import com.example.ui.theme.HeaderCardGradient
-import com.example.ui.theme.MintEmeraldGradient
 import com.example.ui.viewmodel.PackageViewModel
 import com.example.ui.viewmodel.UiState
 import java.text.SimpleDateFormat
@@ -389,27 +386,27 @@ fun ColorfulStatsBar(packages: List<TrackedPackageEntity>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        GradientStatCard(
+        StatCard(
             title = "Total Resi",
             count = total.toString(),
-            gradient = BlueGradient,
+            accentColor = Color(0xFF0284C7),
             icon = Icons.Default.Inventory2,
             modifier = Modifier.weight(1f)
         )
-        GradientStatCard(
+        StatCard(
             title = "Bergerak",
             count = active.toString(),
-            gradient = CoralOrangeGradient,
+            accentColor = Color(0xFFEA580C),
             icon = Icons.Default.LocalShipping,
             modifier = Modifier.weight(1f)
         )
-        GradientStatCard(
+        StatCard(
             title = "Tiba",
             count = delivered.toString(),
-            gradient = MintEmeraldGradient,
+            accentColor = Color(0xFF16A34A),
             icon = Icons.Default.TaskAlt,
             modifier = Modifier.weight(1f)
         )
@@ -417,50 +414,58 @@ fun ColorfulStatsBar(packages: List<TrackedPackageEntity>) {
 }
 
 @Composable
-fun GradientStatCard(
+fun StatCard(
     title: String,
     count: String,
-    gradient: Brush,
+    accentColor: Color,
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .background(gradient)
+                .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF64748B)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(accentColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = title,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(16.dp)
+                        tint = accentColor,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = count,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
             }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = count,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF0F172A)
+            )
         }
     }
 }
@@ -637,19 +642,32 @@ fun BrightPackageCardItem(
                     enriched.ifBlank { "Paket sedang dalam proses perjalanan logistik menuju lokasi tujuan." }
                 }
                 Surface(
-                    color = if (pkg.isDelivered) Color(0xFFF0FDF4) else Color(0xFFEFF6FF),
+                    color = Color.White,
                     shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = enrichedHomeDesc,
-                        fontSize = 12.sp,
-                        color = if (pkg.isDelivered) Color(0xFF166534) else Color(0xFF1E40AF),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 16.sp,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (pkg.isDelivered) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = enrichedHomeDesc,
+                            fontSize = 12.sp,
+                            color = Color(0xFF334155),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 16.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
