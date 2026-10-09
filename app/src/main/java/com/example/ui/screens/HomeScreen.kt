@@ -89,6 +89,10 @@ import com.example.data.model.CourierList
 import com.example.ui.components.AddPackageDialog
 import com.example.ui.components.CourierBadge
 import com.example.ui.components.StatusBadge
+import com.example.ui.theme.BlueGradient
+import com.example.ui.theme.CoralOrangeGradient
+import com.example.ui.theme.HeaderCardGradient
+import com.example.ui.theme.MintEmeraldGradient
 import com.example.ui.viewmodel.PackageViewModel
 import com.example.ui.viewmodel.UiState
 import java.text.SimpleDateFormat
@@ -386,27 +390,27 @@ fun ColorfulStatsBar(packages: List<TrackedPackageEntity>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        StatCard(
+        GradientStatCard(
             title = "Total Resi",
             count = total.toString(),
-            accentColor = Color(0xFF0284C7),
+            gradient = BlueGradient,
             icon = Icons.Default.Inventory2,
             modifier = Modifier.weight(1f)
         )
-        StatCard(
+        GradientStatCard(
             title = "Bergerak",
             count = active.toString(),
-            accentColor = Color(0xFFEA580C),
+            gradient = CoralOrangeGradient,
             icon = Icons.Default.LocalShipping,
             modifier = Modifier.weight(1f)
         )
-        StatCard(
+        GradientStatCard(
             title = "Tiba",
             count = delivered.toString(),
-            accentColor = Color(0xFF16A34A),
+            gradient = MintEmeraldGradient,
             icon = Icons.Default.TaskAlt,
             modifier = Modifier.weight(1f)
         )
@@ -414,58 +418,50 @@ fun ColorfulStatsBar(packages: List<TrackedPackageEntity>) {
 }
 
 @Composable
-fun StatCard(
+fun GradientStatCard(
     title: String,
     count: String,
-    accentColor: Color,
+    gradient: Brush,
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .background(gradient)
                 .padding(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF64748B)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(accentColor.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = title,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(14.dp)
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(16.dp)
                     )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = count,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = count,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF0F172A)
-            )
         }
     }
 }
@@ -487,21 +483,26 @@ fun BrightPackageCardItem(
             .testTag("package_card_${pkg.waybill}"),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Colorful left accent bar using courier brand color (matches card height smoothly)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            // Colorful left accent bar using courier brand color
             Box(
                 modifier = Modifier
                     .width(6.dp)
-                    .matchParentSize()
+                    .fillMaxHeight()
                     .background(courier.brandColor)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 18.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
+                    .padding(14.dp)
             ) {
                 // Row 1: Courier Badge + Courier Name on left, Status Badge on right
                 Row(
@@ -576,54 +577,30 @@ fun BrightPackageCardItem(
                     )
                 }
 
-                // Origin -> Destination (Cleaned of extreme asterisks, bounded with weight and ellipsis)
-                val cleanOrigin = remember(pkg.origin) {
-                    com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(pkg.origin)
-                }
-                val cleanDest = remember(pkg.destination) {
-                    com.example.data.remote.TrackingApiBridge.sanitizeMaskedText(pkg.destination)
-                }
-
-                if (cleanOrigin.isNotBlank() || cleanDest.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (cleanOrigin.isNotBlank()) {
-                            Text(
-                                text = cleanOrigin,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF64748B),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                        }
-
-                        if (cleanOrigin.isNotBlank() && cleanDest.isNotBlank()) {
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                        }
-
-                        if (cleanDest.isNotBlank()) {
-                            Text(
-                                text = cleanDest,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF64748B),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                        }
+                // Origin -> Destination
+                if (pkg.origin.isNotBlank() && pkg.destination.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = pkg.origin,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF64748B)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = pkg.destination,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF64748B)
+                        )
                     }
                 }
 
@@ -631,43 +608,28 @@ fun BrightPackageCardItem(
 
                 // Latest Checkpoint Banner
                 val enrichedHomeDesc = remember(pkg) {
-                    val raw = pkg.statusDescription.ifBlank { "Paket sedang dalam perjalanan logistik" }
-                    val enriched = com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
-                        rawNote = raw,
+                    com.example.data.remote.TrackingApiBridge.enrichStatusDescription(
+                        rawNote = pkg.statusDescription,
                         location = "",
                         isFirst = true,
                         isLast = false,
                         isDelivered = pkg.isDelivered
                     )
-                    enriched.ifBlank { "Paket sedang dalam proses perjalanan logistik menuju lokasi tujuan." }
                 }
                 Surface(
-                    color = Color.White,
+                    color = if (pkg.isDelivered) Color(0xFFF0FDF4) else Color(0xFFEFF6FF),
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(if (pkg.isDelivered) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = enrichedHomeDesc,
-                            fontSize = 12.sp,
-                            color = Color(0xFF334155),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            lineHeight = 16.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    Text(
+                        text = enrichedHomeDesc,
+                        fontSize = 12.sp,
+                        color = if (pkg.isDelivered) Color(0xFF166534) else Color(0xFF1E40AF),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))

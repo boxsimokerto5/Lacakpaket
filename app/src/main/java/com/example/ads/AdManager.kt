@@ -42,7 +42,7 @@ object AdManager {
     const val NATIVE_AD_UNIT_ID = "haijoq497a755vwc"
     const val NATIVE_AD_UNIT_NAME = "Native Lacak Paket"
 
-    const val CLICKS_PER_INTERSTITIAL = 8
+    const val CLICKS_PER_INTERSTITIAL = 5
 
     private val _clickCount = MutableStateFlow(0)
     val clickCount: StateFlow<Int> = _clickCount.asStateFlow()
